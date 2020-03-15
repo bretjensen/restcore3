@@ -1,4 +1,6 @@
 using AutoMapper;
+using CourseLibrary.API.Entities;
+using CourseLibrary.API.Models;
 
 namespace CourseLibrary.API.Profiles
 {
@@ -6,7 +8,8 @@ namespace CourseLibrary.API.Profiles
     {
         public CoursesProfile()
         {
-            CreateMap<Entities.Course, Models.CourseDto>();
+            CreateMap<Course, CourseDto>();
+            CreateMap<CourseForCreationDto, Course>();
         }
     }
 }
