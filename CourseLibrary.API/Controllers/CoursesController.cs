@@ -10,12 +10,12 @@ namespace CourseLibrary.API.Controllers
 {
     [ApiController]
     [Route("api/authors/{authorId}/courses")]
-    public class CourseController : ControllerBase
+    public class CoursesController : ControllerBase
     {
         private readonly ICourseLibraryRepository _courseLibraryRepository;
         private readonly IMapper _mapper;
 
-        public CourseController(ICourseLibraryRepository courseLibraryRepository, IMapper mapper)
+        public CoursesController(ICourseLibraryRepository courseLibraryRepository, IMapper mapper)
         {
             _courseLibraryRepository = courseLibraryRepository ??
                                        throw new ArgumentNullException(nameof(courseLibraryRepository));
@@ -59,6 +59,26 @@ namespace CourseLibrary.API.Controllers
             return CreatedAtRoute("GetCourseForAuthor",
                 new {authorId, courseId = courseToReturn.Id},
                 courseToReturn);
+        }
+
+        [HttpPut("{courseId}")]
+        public ActionResult UpdateCourseForAuthor(Guid authorId, Guid courseId, CourseForUpdateDto course)
+        {
+            if(!_courseLibraryRepository.AuthorExists(authorId))
+            {
+                return NotFound();
+            }
+
+            var courseForAuthorFromRepo = _courseLibraryRepository.GetCourse(authorId, courseId);
+
+            if(courseForAuthorFromRepo == null)
+            {
+                return NotFound();
+            }
+            
+            _mapper.Map(course, courseForAuthorFromRepo);
+            
+            _courseLibraryRepository.UpdateCourse(courseForAuthorFromRepo);
         }
     }
 }
