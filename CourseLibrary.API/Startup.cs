@@ -5,6 +5,7 @@ using CourseLibrary.API.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,12 +26,31 @@ namespace CourseLibrary.API
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers(
-                setupAction =>
-                {
-                    setupAction.ReturnHttpNotAcceptable = true;
-                }).AddXmlDataContractSerializerFormatters();
+                    setupAction => { setupAction.ReturnHttpNotAcceptable = true; })
+                .AddXmlDataContractSerializerFormatters()
+                .ConfigureApiBehaviorOptions(setupAction =>
+                    {
+                        setupAction.InvalidModelStateResponseFactory = context =>
+                        {
+                            var problemDetails = new ValidationProblemDetails(context.ModelState)
+                            {
+                                Type = "https://courselibrary.com/modelvalidationproblem",
+                                Title = "One or more model validation errors occured",
+                                Status = StatusCodes.Status422UnprocessableEntity,
+                                Detail = "See errors property for details",
+                                Instance = context.HttpContext.Request.Path
+                            };
 
-            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+                            problemDetails.Extensions.Add("traceId", context.HttpContext.TraceIdentifier);
+
+                            return new UnprocessableEntityObjectResult(problemDetails)
+                            {
+                                ContentTypes = {"application/problem+json"}
+                            };
+                        };
+                    });
+        
+        services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             
             services.AddScoped<ICourseLibraryRepository, CourseLibraryRepository>();
 
